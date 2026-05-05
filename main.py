@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form
 from typing import List
 from fpdf import FPDF
-from PIL import Image, ImageOps
+from PIL import Image
 import io, os, uvicorn
 from fastapi.responses import FileResponse
 
@@ -24,13 +24,17 @@ class PREMIUM_PORTFOLIO(FPDF):
             self.set_text_color(255, 255, 255)
             self.set_font('Helvetica', 'B', 8)
             self.set_y(0)
-            self.cell(0, 10, f'GCU HYDERABAD | {self.dept.upper()} | {self.year}', 0, 0, 'C')
+            self.cell(0, 10,
+                      f'GCU HYDERABAD | {self.dept.upper()} | {self.year}',
+                      0, 0, 'C')
 
     def footer(self):
         self.set_y(-15)
         self.set_font('Helvetica', 'I', 8)
         self.set_text_color(120, 120, 120)
-        self.cell(0, 10, f'{self.student_name} ({self.roll_no}) | Page {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10,
+                  f'{self.student_name} ({self.roll_no}) | Page {self.page_no()}',
+                  0, 0, 'C')
 
 
 def create_pdf(name, roll_no, subject, dept, year, submitted_to, theme_hex, contents):
@@ -39,7 +43,7 @@ def create_pdf(name, roll_no, subject, dept, year, submitted_to, theme_hex, cont
     pdf = PREMIUM_PORTFOLIO(name, roll_no, theme_rgb, dept, year)
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # FRONT PAGE
+    # ================= FRONT PAGE =================
     pdf.add_page()
     pdf.set_fill_color(248, 249, 252)
     pdf.rect(0, 0, 210, 297, 'F')
@@ -51,32 +55,53 @@ def create_pdf(name, roll_no, subject, dept, year, submitted_to, theme_hex, cont
 
     pdf.set_font("Helvetica", '', 14)
     pdf.set_text_color(80, 80, 80)
-    pdf.cell(0, 10, f"{subject}", ln=True, align='C')
+    pdf.cell(0, 10, subject, ln=True, align='C')
 
-    pdf.ln(30)
+    pdf.ln(25)
     pdf.set_font("Helvetica", '', 12)
     pdf.cell(0, 8, f"Name: {name}", ln=True, align='C')
     pdf.cell(0, 8, f"Roll No: {roll_no}", ln=True, align='C')
     pdf.cell(0, 8, f"Department: {dept}", ln=True, align='C')
     pdf.cell(0, 8, f"Submitted To: {submitted_to}", ln=True, align='C')
 
-    # TASK PAGES
+    # ================= TASK PAGES =================
     total_tasks = len(contents) // 2
 
     for i in range(total_tasks):
+
+        # new page every 2 tasks (IMPORTANT FIX)
         pdf.add_page()
 
+        # ================= TASK LABEL =================
+        pdf.set_fill_color(235, 237, 240)
+        pdf.rect(10, 15, 190, 10, 'F')
+
+        pdf.set_xy(12, 15)
+        pdf.set_font("Helvetica", 'B', 10)
+        pdf.set_text_color(*theme_rgb)
+        pdf.cell(0, 10, f"TASK {i+1}", 0, 1)
+
+        # ================= LEFT IMAGE (CODE) =================
         img1 = Image.open(io.BytesIO(contents[i*2])).convert("RGB")
-        img2 = Image.open(io.BytesIO(contents[i*2+1])).convert("RGB")
-
-        p1 = f"/tmp/c{i}.jpg"
-        p2 = f"/tmp/o{i}.jpg"
-
+        p1 = f"/tmp/c_{i}.jpg"
         img1.save(p1)
+
+        pdf.set_font("Helvetica", '', 8)
+        pdf.set_text_color(100, 100, 100)
+        pdf.set_xy(10, 30)
+        pdf.cell(90, 6, "CODE", 0, 1)
+
+        pdf.image(p1, x=10, y=35, w=90)
+
+        # ================= RIGHT IMAGE (OUTPUT) =================
+        img2 = Image.open(io.BytesIO(contents[i*2+1])).convert("RGB")
+        p2 = f"/tmp/o_{i}.jpg"
         img2.save(p2)
 
-        pdf.image(p1, x=10, y=30, w=90)
-        pdf.image(p2, x=110, y=30, w=90)
+        pdf.set_xy(110, 30)
+        pdf.cell(90, 6, "OUTPUT", 0, 1)
+
+        pdf.image(p2, x=110, y=35, w=90)
 
         os.remove(p1)
         os.remove(p2)
