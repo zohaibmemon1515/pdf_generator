@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form
 from typing import List
 from fpdf import FPDF
 import os
+from fastapi.responses import FileResponse
 from PIL import Image, ImageOps
 import io
 import uvicorn
@@ -139,7 +140,11 @@ async def handle_pdf(
     files.sort(key=lambda x: x.filename)
     byte_data = [await f.read() for f in files]
     pdf_filename = create_final_pdf(name, roll_no, subject, dept, year, submitted_to, theme, byte_data)
-    return {"status": "Success", "filename": pdf_filename}
+    return FileResponse(
+    path=pdf_filename,
+    filename=os.path.basename(pdf_filename),
+    media_type='application/pdf'
+)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
