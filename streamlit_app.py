@@ -88,7 +88,7 @@ if st.button("🚀 GENERATE & SEND TO WHATSAPP"):
                 "dept": user_dept, "year": user_year, "submitted_to": user_to, "theme": theme_color
             }
             try:
-                res = requests.post("http://127.0.0.1:8000/generate-pdf", data=payload, files=files_data)
+                res = requests.post("https://memonz-pdf-generator.hf.space/generate-pdf", data=payload, files=files_data)
                 if res.status_code == 200:
                     pdf_filename = res.json()['filename']
                     wa_res = send_to_whatsapp(pdf_filename, whatsapp_num, user_name)
